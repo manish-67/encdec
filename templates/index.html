@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encryption Vault</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <h2 class="text-center">Encryption Vault</h2>
+    <form id="encryption-form">
+        <div class="form-group">
+            <label for="text">Enter Text:</label>
+            <input type="text" class="form-control" id="text" name="text" required>
+        </div>
+        <div class="form-group">
+            <label for="key">Master Key (AES/XOR):</label>
+            <input type="password" class="form-control" id="key" name="key">
+        </div>
+        <label>Select Encryption Techniques:</label><br>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="base64" name="techniques" value="Base64">
+            <label class="form-check-label" for="base64">Base64</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="caesar" name="techniques" value="Caesar">
+            <label class="form-check-label" for="caesar">Caesar</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="aes" name="techniques" value="AES">
+            <label class="form-check-label" for="aes">AES</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="rot13" name="techniques" value="ROT13">
+            <label class="form-check-label" for="rot13">ROT13</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="xor" name="techniques" value="XOR">
+            <label class="form-check-label" for="xor">XOR</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="reverse" name="techniques" value="Reverse">
+            <label class="form-check-label" for="reverse">Reverse String</label>
+        </div>
+
+        <!-- Select All button -->
+        <button type="button" id="select-all" class="btn btn-info mt-3">Select All</button>
+
+        <div class="form-group mt-3">
+            <button type="submit" class="btn btn-primary">Encrypt</button>
+            <button type="button" class="btn btn-success" id="decrypt-button">Decrypt</button>
+        </div>
+    </form>
+
+    <div id="result" class="mt-4"></div>
+</div>
+
+<script>
+$(document).ready(function(){
+    // Select All button functionality
+    $("#select-all").click(function() {
+        var allChecked = true;
+        $("input[type='checkbox']").each(function() {
+            if (!this.checked) {
+                allChecked = false;
+                return false; // Exit loop
+            }
+        });
+
+        $("input[type='checkbox']").prop('checked', !allChecked); // Toggle the state
+        $(this).text(allChecked ? 'Select All' : 'Deselect All'); // Toggle button text
+    });
+
+    // Encryption form submit
+    $("#encryption-form").on("submit", function(event){
+        event.preventDefault();
+
+        var formData = $(this).serialize();
+
+        $.ajax({
+            url: "/encrypt",
+            method: "POST",
+            data: formData,
+            success: function(response){
+                $("#result").html(`
+                    <h4>Encrypted Text:</h4>
+                    <p id="result-text">${response.encrypted_text}</p>
+                    <button id="copy-btn" class="btn btn-secondary">Copy</button>
+                `);
+            },
+            error: function(xhr, status, error){
+                $("#result").html("<p class='text-danger'>" + xhr.responseJSON.error + "</p>");
+            }
+        });
+    });
+
+    // Decrypt button functionality
+    $("#decrypt-button").on("click", function(){
+        var formData = $("#encryption-form").serialize();
+
+        $.ajax({
+            url: "/decrypt",
+            method: "POST",
+            data: formData,
+            success: function(response){
+                $("#result").html(`
+                    <h4>Decrypted Text:</h4>
+                    <p id="result-text">${response.decrypted_text}</p>
+                    <button id="copy-btn" class="btn btn-secondary">Copy</button>
+                `);
+            },
+            error: function(xhr, status, error){
+                $("#result").html("<p class='text-danger'>" + xhr.responseJSON.error + "</p>");
+            }
+        });
+    });
+
+    // Copy button functionality
+    $(document).on('click', '#copy-btn', function() {
+        var text = $("#result-text").text();
+        navigator.clipboard.writeText(text).then(function() {
+            alert("Text copied to clipboard!");
+        }, function(err) {
+            alert("Error copying text: " + err);
+        });
+    });
+});
+</script>
+</body>
+</html>
